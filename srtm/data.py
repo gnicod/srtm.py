@@ -215,7 +215,20 @@ class GeoElevationData:
         else:
             raise Exception('Invalid mode ' + mode)
 
-    def add_elevations(self, gpx, only_missing=False, smooth=False, gpx_smooth_no=0):
+    def add_elevations_to_geojson(self, geojson=None, only_missing=False):
+        if geojson is not None:
+            print("lol")
+            for k,feature in enumerate(geojson['features']):
+                if feature['geometry']['type'] == "LineString":
+                    for kp,coord in enumerate(feature['geometry']['coordinates']):
+                        elevation = self.get_elevation(coord[0], coord[1])
+                        if len(coord) < 3:
+                            coord.append(elevation)
+                        elif not only_missing:
+                            coord[2] = elevation
+                            geojson['features'][k]['geometry']['coordinates'][kp] = coord
+
+    def add_elevations(self, gpx=None, only_missing=False, smooth=False, gpx_smooth_no=0):
         """
         only_missing -- if True only points without elevation will get a SRTM value
 
@@ -274,7 +287,6 @@ class GeoElevationData:
         n = 0
         for point in gpx.walk(only_points=True):
             if elevations_1[n] != None and elevations_2[n] != None and elevations_3[n] != None:
-                #print elevations_1[n], elevations_2[n], elevations_3[n]
                 point.elevation = (elevations_1[n] + elevations_2[n] + elevations_3[n]) / 3.
             else:
                 point.elevation = None
